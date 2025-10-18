@@ -1,6 +1,10 @@
 # Multi-stage build for React app
 FROM node:18-alpine as build
 
+# Accept build-time argument
+ARG REACT_APP_API_URL
+ENV REACT_APP_API_URL=$REACT_APP_API_URL
+
 # Set working directory
 WORKDIR /app
 
@@ -27,10 +31,6 @@ COPY nginx.conf /etc/nginx/nginx.conf
 
 # Expose port
 EXPOSE 80
-
-# Health check
-HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
-  CMD curl -f http://localhost/ || exit 1
 
 # Start nginx
 CMD ["nginx", "-g", "daemon off;"]

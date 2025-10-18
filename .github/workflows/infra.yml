@@ -1,0 +1,43 @@
+name: aks infra, and azure sql
+
+on:
+  workflow_dispatch:
+    
+jobs:
+  infra:
+    name: Provision AKS and Azure sql
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: checkout code
+        uses: actions/checkout@v4
+        
+
+      - name: Login to Azure
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+          client-secret: ${{ secrets.AZURE_CLIENT_SECRET }}
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.9.0
+
+      - name: Initialize Terraform
+        run: terrform init 
+        working-directory: terraform
+
+      - name: Validate configuration
+        run: terrform validate 
+        working-directory: terraform
+
+      - name: Plan the changes
+        run: terrform plan -out=tfplan
+        working-directory: terraform
+
+      - name: Apply changes
+        run: terraform apply --auto-approve tfplan
+        working-directory: terraform

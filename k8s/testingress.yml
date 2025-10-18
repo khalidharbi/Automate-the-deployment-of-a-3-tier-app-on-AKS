@@ -1,0 +1,18 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: catch-all
+spec:
+  ingressClassName: otheringress
+  rules:
+  - http:
+      paths:
+      - backend:
+          service:
+            name: svc
+            port:
+              name: port
+        path: /path
+        pathType: Exact
+status:
+  loadBalancer: {}

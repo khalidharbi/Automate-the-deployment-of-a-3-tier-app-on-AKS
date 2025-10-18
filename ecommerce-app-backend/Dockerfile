@@ -1,27 +1,25 @@
-# Use Node.js 18 Alpine as base image
-FROM node:18-alpine
 
-# Set working directory
+
+# Use Node.js 20 Alpine as base image
+FROM node:20-alpine AS builder
+
+WORKDIR /app
+COPY package*.json ./
+RUN npm ci
+
+# Copy source and build
+COPY . .
+RUN npm run build   # <---- this creates /app/dist if your project builds
+
+# ===== RUNTIME STAGE =====
+FROM node:20-alpine
 WORKDIR /app
 
-# Copy package files
 COPY package*.json ./
-
-# Install dependencies
 RUN npm ci --only=production
 
-# Copy source code
-COPY . .
+# Copy built app
+COPY --from=builder /app/dist ./dist
 
-# Build the application
-RUN npm run build
-
-# Expose port
 EXPOSE 3001
-
-# Health check
-HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
-  CMD node healthcheck.js
-
-# Start the application
 CMD ["npm", "start"]

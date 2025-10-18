@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: dbconfig
+  namespace: ecommerce-app
+data:
+  DB_SERVER: "khalid-sqlsrv.database.windows.net"
+  DB_NAME: "khalid-db"
+  DB_ENCRYPT: "true"
+  DB_TRUST_SERVER_CERTIFICATE: "false"
+  JWT_EXPIRES_IN: 7d
+  CORS_ORIGIN: http://20.174.145.217
