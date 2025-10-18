@@ -1,1 +1,0 @@
-{"Modules":[{"Key":"","Source":"","Dir":"."},{"Key":"aks","Source":"./modules/aks","Dir":"modules/aks"},{"Key":"pri","Source":"./modules/privatelink","Dir":"modules/privatelink"},{"Key":"sql","Source":"./modules/sql","Dir":"modules/sql"},{"Key":"subnets","Source":"./modules/subnet","Dir":"modules/subnet"},{"Key":"vnet","Source":"./modules/vnet","Dir":"modules/vnet"}]}
