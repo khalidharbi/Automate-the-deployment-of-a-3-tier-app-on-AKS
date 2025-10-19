@@ -7,7 +7,7 @@ jobs:
   build:
     name: set cluster & build images 
     runs-on: ubuntu-latest
-
+    environment: dev
     steps:
       - name: checkout code
         uses: actions/checkout@v4
