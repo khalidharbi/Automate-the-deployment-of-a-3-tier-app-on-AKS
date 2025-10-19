@@ -57,7 +57,8 @@ jobs:
             --from-literal=DB_NAME=${{ secrets.DB_NAME }} \
             --from-literal=DB_SERVER=${{ secrets.DB_SERVER }} \
             --from-literal=DB_TRUST_SERVER_CERTIFICATE=${{ secrets.DB_TRUST_SERVER_CERTIFICATE }} \
-            --from-literal=CORS_ORIGIN=http://$INGRESS_LB_IP
+            --from-literal=CORS_ORIGIN=http://$INGRESS_LB_IP \
+            --from-literal=DB_ENCRYPT=${{ secrets.DB_ENCRYPT }}
 
       - name: create k8s secret for backend
         run: |
