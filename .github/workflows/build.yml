@@ -4,8 +4,8 @@ on:
   workflow_dispatch:
     
 jobs:
-  infra:
-    name: Provision AKS and Azure sql
+  build:
+    name: set cluster & build images 
     runs-on: ubuntu-latest
 
     steps:
@@ -74,7 +74,7 @@ jobs:
         working-directory: ecommerce-app-backend
 
       - name: push backend docker image
-        run: docker push ${{ secrets.DOCKER_USERNAME}}/ecommerce-app-backend:latest
+        run: docker push ${{ secrets.DOCKER_USERNAME }}/ecommerce-app-backend:latest
 
       - name: build frontend docker image 
         run: |
