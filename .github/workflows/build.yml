@@ -29,6 +29,10 @@ jobs:
         with:
           terraform_version: 1.9.0
 
+      - name: Initialize Terraform backend
+        run: terraform init
+        working-directory: terraform
+
       - name: set kubeconfig 
         run: |
           mkdir -p ~/.kube
