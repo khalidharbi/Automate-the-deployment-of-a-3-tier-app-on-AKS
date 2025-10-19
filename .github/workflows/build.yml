@@ -42,7 +42,17 @@ jobs:
       - name: verify cluster access
         run: kubectl get nodes
 
+      - name: Check if ingress exists
+        id: ingress
+        run: |
+          if kubectl get ns ingress-nginx >/dev/null 2>&1; then
+             echo "exists=true" >> $GITHUB_OUTPUT
+          else
+             echo "exists=false" >> $GITHUB_OUTPUT
+          fi
+
       - name: Install nginx Ingress
+        if: steps.ingress.outputs.exists == 'false'
         run: |
           helm repo add ingress-nginx https://kubernetes.github.io/ingress-nginx
           helm repo update
