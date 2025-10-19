@@ -63,8 +63,8 @@ jobs:
       - name: create k8s secret for backend
         run: |
           kubectl create -n ecommerce-app secret generic my-secret \
-            --from-literal=SQL_ADMIN_LOGIN=${{ secrets.SQL_ADMIN_LOGIN }} \
-            --from-literal=SQL_ADMIN_PASSWORD=${{ secrets.SQL_ADMIN_PASSWORD }}
+            --from-literal=DB_USER=${{ secrets.SQL_ADMIN_LOGIN }} \
+            --from-literal=DB_PASSWORD=${{ secrets.SQL_ADMIN_PASSWORD }}
 
       - name: deploy k8s backend
         run: |
