@@ -1,0 +1,73 @@
+name: aks infra, and azure sql
+
+on:
+  workflow_dispatch:
+    
+jobs:
+  infra:
+    name: Provision AKS and Azure sql
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: checkout code
+        uses: actions/checkout@v4
+        
+
+      - name: Login to Azure
+        uses: azure/login@v2
+        with: 
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Set Terraform Azure credentials
+        run: |
+          echo "ARM_CLIENT_ID=${{ fromJson(secrets.AZURE_CREDENTIALS).clientId }}" >> $GITHUB_ENV
+          echo "ARM_CLIENT_SECRET=${{ fromJson(secrets.AZURE_CREDENTIALS).clientSecret }}" >> $GITHUB_ENV
+          echo "ARM_SUBSCRIPTION_ID=${{ fromJson(secrets.AZURE_CREDENTIALS).subscriptionId }}" >> $GITHUB_ENV
+          echo "ARM_TENANT_ID=${{ fromJson(secrets.AZURE_CREDENTIALS).tenantId }}" >> $GITHUB_ENV
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.9.0
+
+      - name: set kubeconfig 
+        run: |
+          mkdir -p ~/.kube
+          terraform output -raw kube_config > ~/.kube/config
+        working-directory: terraform
+
+      - name: verify cluster access
+        run: kubectl get nodes
+
+      - name: Install nginx Ingress
+        run: |
+          helm repo add ingress-nginx https://kubernetes.github.io/ingress-nginx
+          helm repo update
+          helm install ingress-nginx ingress-nginx/ingress-nginx --create-namespace --namespace ingress-nginx
+
+      - name: get ingress lb IP 
+        run: |
+          echo "INGRESS_LB_IP=$(kubectl get svc -n ingress-nginx | awk '{ print $4 }' | head -n 2 | tail -n 1)" >> $GITHUB_ENV
+
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Build backend docker image
+        run: |
+          docker build -t ${{ secrets.DOCKERHUB_USERNAME }}/ecommerce-app-backend:latest .
+        working-directory: ecommerce-app-backend
+
+      - name: push backend docker image
+        run: docker push ${{ secrets.DOCKERHUB_USERNAME}}/ecommerce-app-backend:latest
+
+      - name: build frontend docker image 
+        run: |
+          docker build --build-arg REACT_APP_API_URL=http://$INGRESS_LB_IP/api \
+          -t ${{ secrets.DOCKERHUB_USERNAME }}/ecommerce-app-frontend:latest .
+        working-directory: ecommerce-app-frontend
+
+      - name: push frontend docker image
+        run: docker push ${{ secrets.DOCKERHUB_USERNAME }}/ecommerce-app-frontend:latest 
