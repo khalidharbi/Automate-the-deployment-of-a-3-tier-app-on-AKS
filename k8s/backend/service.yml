@@ -1,12 +1,12 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: ecommerce-app
+  name: ecommerce-app-backend-svc
   namespace: ecommerce-app
 spec:
   ports:
   - port: 80
     targetPort: 3001
   selector:
-    app: ecommerce-app
+    app: ecommerce-app-backend
 

@@ -1,17 +1,17 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: ecommerce-app
+  name: ecommerce-app-backend
   namespace: ecommerce-app
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: ecommerce-app
+      app: ecommerce-app-backend
   template:
     metadata:
       labels:
-        app: ecommerce-app
+        app: ecommerce-app-backend
     spec:
       containers:
       - image: khalidharbi/ecommerce-app-backend:latest

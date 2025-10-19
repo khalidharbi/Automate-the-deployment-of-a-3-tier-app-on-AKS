@@ -1,0 +1,83 @@
+name: deploy k8s manifest
+
+on:
+  workflow_dispatch:
+    
+jobs:
+  build:
+    name: deploy & create cm and secret objects
+    runs-on: ubuntu-latest
+    environment: dev
+    steps:
+      - name: checkout code
+        uses: actions/checkout@v4
+
+      - name: Login to Azure
+        uses: azure/login@v2
+        with: 
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Set Terraform Azure credentials
+        run: |
+          echo "ARM_CLIENT_ID=${{ fromJson(secrets.AZURE_CREDENTIALS).clientId }}" >> $GITHUB_ENV
+          echo "ARM_CLIENT_SECRET=${{ fromJson(secrets.AZURE_CREDENTIALS).clientSecret }}" >> $GITHUB_ENV
+          echo "ARM_SUBSCRIPTION_ID=${{ fromJson(secrets.AZURE_CREDENTIALS).subscriptionId }}" >> $GITHUB_ENV
+          echo "ARM_TENANT_ID=${{ fromJson(secrets.AZURE_CREDENTIALS).tenantId }}" >> $GITHUB_ENV
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.9.0
+
+      - name: Initialize Terraform backend
+        run: terraform init
+        working-directory: terraform
+
+      - name: set kubeconfig 
+        run: |
+          mkdir -p ~/.kube
+          terraform output -raw kube_config > ~/.kube/config
+        working-directory: terraform
+
+      - name: verify cluster access
+        run: kubectl get nodes
+
+      - name: get ingress lb IP 
+        run: |
+          echo "INGRESS_LB_IP=$(kubectl get svc -n ingress-nginx | awk '{ print $4 }' | head -n 2 | tail -n 1)" >> $GITHUB_ENV
+      
+      - name: create namespace 
+        run: |
+          kubectl apply -f namespace.yml
+        working-directory: k8s
+
+      - name: create ConfigMap for backend from github secrets 
+        run: |
+          kubectl create -n ecommerce-app configmap dbconfig \
+            --from-literal=DB_NAME=${{ secrets.DB_NAME }}
+            --from-literal=DB_SERVER=${{ secrets.DB_SERVER }}
+            --from-literal=DB_TRUST_SERVER_CERTIFICATE=${{ secrets.DB_TRUST_SERVER_CERTIFICATE }}
+            --from-literal=CORS_ORIGIN=http://$INGRESS_LB_IP
+
+      - name: create k8s secret for backend
+        run: |
+          kubectl creat -n ecommerce-app secret generic my-secret \
+            --from-literal=SQL_ADMIN_LOGIN=${{ secrets.SQL_ADMIN_LOGIN }}
+            --from-literal=SQL_ADMIN_PASSWORD=${{ secrets.SQL_ADMIN_PASSWORD }}
+
+      - name: deploy k8s backend
+        run: |
+          kubectl apply -f deployment.yml
+          kubectl apply -f service.yml
+          kubectl apply -f ingress.yml
+        working-directory: k8s/backend
+
+      - name: deploy k8s frontend
+        run: |
+          kubectl apply -f deployment.yml
+          kubectl apply -f service.yml
+          kubectl apply -f ingress.yml
+        working-directory: k8s/frontend
+
+      - name: get all 
+        run: kubectl get all -n ecommerce-app
