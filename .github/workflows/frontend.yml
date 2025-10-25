@@ -66,11 +66,10 @@ jobs:
         working-directory: terraform
 
       - name: Set AKS Context
-        if: github.event_name == 'workflow_dispatch'
         uses: azure/aks-set-context@v3
         with:
-          cluster-name: $CLUSTER_NAME 
-          resource-group: $RG
+          cluster-name: ${{ env.CLUSTER_NAME }} 
+          resource-group: ${{ env.RG }}
 
       - name: verify cluster access
         if: github.event_name == 'workflow_dispatch'
