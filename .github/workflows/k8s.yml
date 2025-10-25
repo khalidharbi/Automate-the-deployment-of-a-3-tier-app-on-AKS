@@ -59,16 +59,14 @@ jobs:
           helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
           helm repo update
           helm upgrade --install monitoring prometheus-community/kube-prometheus-stack \
-            --namespace monitoring --create-namespace 
+            --namespace monitoring --create-namespace \
+            --set prometheus.service.type=LoadBalancer
 
       - name: Expose Prometheus externally
         run: |
-          kubectl wait --namespace monitoring --for=condition=available --timeout=120s svc/prometheus-server
-          kubectl expose service monitoring-kube-prometheus-prometheus \
-            --namespace monitoring \
-            --type=LoadBalancer \
-            --target-port=9090 \
-            --name=prometheus-server-ext
+          kubectl wait --namespace monitoring --for=condition=available --timeout=300s svc/monitoring-kube-prometheus-prometheus
+          echo "Prometheus LB IP:"
+          kubectl get svc monitoring-kube-prometheus-prometheus -n monitoring -o jsonpath='{.status.loadBalancer.ingress[0].ip}'
 
       - name: wait for ingress IP
         run: |
