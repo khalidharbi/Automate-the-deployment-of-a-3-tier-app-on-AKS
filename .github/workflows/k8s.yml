@@ -62,12 +62,6 @@ jobs:
             --namespace monitoring --create-namespace \
             --set prometheus.service.type=LoadBalancer
 
-      - name: Expose Prometheus externally
-        run: |
-          kubectl wait --namespace monitoring --for=condition=available --timeout=300s svc/monitoring-kube-prometheus-prometheus
-          echo "Prometheus LB IP:"
-          kubectl get svc monitoring-kube-prometheus-prometheus -n monitoring -o jsonpath='{.status.loadBalancer.ingress[0].ip}'
-
       - name: wait for ingress IP
         run: |
           echo "Waiting for Ingress LB IP..."
@@ -79,6 +73,11 @@ jobs:
             fi
             sleep 10
           done
+
+      - name: Expose Prometheus externally
+        run: |
+          echo "Prometheus LB IP:"
+          kubectl get svc monitoring-kube-prometheus-prometheus -n monitoring -o jsonpath='{.status.loadBalancer.ingress[0].ip}'
 
       - name: create namespace 
         run: |
