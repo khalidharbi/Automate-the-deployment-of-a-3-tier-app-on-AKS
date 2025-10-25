@@ -60,6 +60,10 @@ jobs:
           helm repo update
           helm upgrade --install monitoring prometheus-community/kube-prometheus-stack \
             --namespace monitoring --create-namespace 
+
+      - name: Expose Prometheus externally
+        run: |
+          kubectl wait --namespace monitoring --for=condition=available --timeout=120s svc/prometheus-server
           kubectl expose service prometheus-server \
             --namespace monitoring \
             --type=LoadBalancer \
