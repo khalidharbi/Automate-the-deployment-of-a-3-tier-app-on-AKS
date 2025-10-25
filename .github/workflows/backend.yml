@@ -2,7 +2,9 @@ name: deploy backend
 
 on:
   push:
-    branches: [ main ]
+    paths:
+      - 'ecommerce-app-backend/**'
+      
   workflow_dispatch:
 
 jobs:
