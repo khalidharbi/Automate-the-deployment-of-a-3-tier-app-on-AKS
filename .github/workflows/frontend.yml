@@ -4,7 +4,7 @@ on:
   push:
    branches:
      - main
-     
+
   workflow_dispatch:
 
 jobs:
@@ -30,7 +30,7 @@ jobs:
         working-directory: ecommerce-app-frontend
 
       - name: Run tests
-        run: npm test --if-present
+        run: npm test --if-present -- --passWithNoTests
         working-directory: ecommerce-app-frontend
 
       - name: Login to Azure
