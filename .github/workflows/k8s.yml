@@ -64,7 +64,7 @@ jobs:
       - name: Expose Prometheus externally
         run: |
           kubectl wait --namespace monitoring --for=condition=available --timeout=120s svc/prometheus-server
-          kubectl expose service prometheus-server \
+          kubectl expose service monitoring-kube-prometheus-prometheus \
             --namespace monitoring \
             --type=LoadBalancer \
             --target-port=9090 \
