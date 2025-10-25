@@ -109,7 +109,8 @@ jobs:
 
       - name: Apply frontend ConfigMap
         if: github.event_name == 'workflow_dispatch'
-        run: kubectl apply -f frontend-configmap.yml
+        run: kubectl apply -f configmap.yml
+        working-directory: k8s/frontend
 
       - name: Force rollout
         if: github.event_name == 'workflow_dispatch'
