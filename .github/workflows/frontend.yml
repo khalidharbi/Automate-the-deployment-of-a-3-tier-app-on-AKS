@@ -25,8 +25,8 @@ jobs:
         run: npm ci
         working-directory: ecommerce-app-frontend
 
-      - name: Run lint
-        run: npm run lint --if-present
+      - name: Build frontend
+        run: npm run build
         working-directory: ecommerce-app-frontend
 
       - name: Run tests
