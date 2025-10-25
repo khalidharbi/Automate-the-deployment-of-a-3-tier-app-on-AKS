@@ -117,6 +117,6 @@ jobs:
 
       - name: Force rollout
         if: github.event_name == 'workflow_dispatch'
-        run: kubectl rollout restart deployment/frontend -n default
-        working-directory: k8s/frontend
+        run: kubectl rollout restart deployment/ecommerce-app-backend -n ecommerce-app
+        working-directory: k8s/backend
 
