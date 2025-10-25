@@ -79,7 +79,17 @@ jobs:
       - name: get ingress lb IP 
         if: github.event_name == 'workflow_dispatch'
         run: |
-          echo "INGRESS_LB_IP=$(kubectl get svc -n ingress-nginx | awk '{ print $4 }' | head -n 2 | tail -n 1)" >> $GITHUB_ENV
+          echo "INGRESS_LB_IP=$(kubectl get svc ingress-nginx-controller -n ingress-nginx -o jsonpath='{.status.loadBalancer.ingress[0].ip}'
+          )" >> $GITHUB_ENV
+
+      - name: Create frontend ConfigMap from literal
+        if: github.event_name == 'workflow_dispatch'
+        run: |
+          kubectl create configmap frontend-configmap \
+            --namespace ecommerce-app \
+            --from-literal=config.json="{\"API_URL\": \"http://$INGRESS_LB_IP/api\"}" \
+            --dry-run=client -o yaml > configmap.yml
+        working-directory: k8s/frontend
 
       - name: Login to Docker Hub
         if: github.event_name == 'workflow_dispatch'
@@ -91,13 +101,16 @@ jobs:
       - name: build frontend docker image 
         if: github.event_name == 'workflow_dispatch'
         run: |
-          docker build --build-arg REACT_APP_API_URL=http://$INGRESS_LB_IP/api \
-          -t ${{ secrets.DOCKER_USERNAME }}/ecommerce-app-frontend:latest .
+          docker build -t ${{ secrets.DOCKER_USERNAME }}/ecommerce-app-frontend:latest .
         working-directory: ecommerce-app-frontend
 
       - name: push frontend docker image
         if: github.event_name == 'workflow_dispatch'
         run: docker push ${{ secrets.DOCKER_USERNAME }}/ecommerce-app-frontend:latest
+
+      - name: Apply frontend ConfigMap
+        if: github.event_name == 'workflow_dispatch'
+        run: kubectl apply -f frontend-configmap.yml
 
       - name: Force rollout
         if: github.event_name == 'workflow_dispatch'

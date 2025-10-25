@@ -18,6 +18,9 @@ spec:
         name: ecommerce-app-frontend
         ports:
         - containerPort: 80
+        envFrom:
+        - configMapRef:
+            name: frontend-configmap
         livenessProbe:
           httpGet:
             path: /
