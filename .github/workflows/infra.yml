@@ -1,4 +1,4 @@
-name: aks infra, and azure sql
+name: Provision infra 
 
 on:
   workflow_dispatch:

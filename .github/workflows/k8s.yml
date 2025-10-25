@@ -1,4 +1,4 @@
-name: set kube
+name: set k8s
 
 on:
   workflow_dispatch:
@@ -42,8 +42,8 @@ jobs:
       - name: Set AKS Context
         uses: azure/aks-set-context@v3
         with:
-          cluster-name: $CLUSTER_NAME 
-          resource-group: $RG
+          cluster-name: ${{ env.CLUSTER_NAME }} 
+          resource-group: ${{ env.RG }}
 
       - name: verify cluster access
         run: kubectl get nodes
