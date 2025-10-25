@@ -2,8 +2,9 @@ name: deploy frontend
 
 on:
   push:
-    paths:
-      - 'ecommerce-app-frontend/**'
+   branches:
+     - main
+     
   workflow_dispatch:
 
 jobs:
