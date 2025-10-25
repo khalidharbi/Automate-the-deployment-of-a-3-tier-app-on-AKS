@@ -1,0 +1,102 @@
+name: deploy frontend
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: deploy frontend
+    runs-on: ubuntu-latest
+    environment: dev
+    steps:
+      - name: checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run lint
+        run: npm run lint --if-present
+        working-directory: ecommerce-app-frontend
+
+      - name: Run tests
+        run: npm test --if-present
+        working-directory: ecommerce-app-frontend
+
+      - name: Login to Azure
+        if: github.event_name == 'workflow_dispatch'
+        uses: azure/login@v2
+        with: 
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+        
+      - name: Set Terraform Azure credentials
+        if: github.event_name == 'workflow_dispatch'
+        run: |
+          echo "ARM_CLIENT_ID=${{ fromJson(secrets.AZURE_CREDENTIALS).clientId }}" >> $GITHUB_ENV
+          echo "ARM_CLIENT_SECRET=${{ fromJson(secrets.AZURE_CREDENTIALS).clientSecret }}" >> $GITHUB_ENV
+          echo "ARM_SUBSCRIPTION_ID=${{ fromJson(secrets.AZURE_CREDENTIALS).subscriptionId }}" >> $GITHUB_ENV
+          echo "ARM_TENANT_ID=${{ fromJson(secrets.AZURE_CREDENTIALS).tenantId }}" >> $GITHUB_ENV
+
+      - name: Setup Terraform
+        if: github.event_name == 'workflow_dispatch'
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.9.0
+
+      - name: Initialize Terraform backend
+        if: github.event_name == 'workflow_dispatch'
+        run: terraform init
+        working-directory: terraform
+
+      - name: get k8s outputs (rg, cluster_name)
+        if: github.event_name == 'workflow_dispatch'
+        run: |
+          echo "RG=$(terraform output -raw rg)" >> $GITHUB_ENV
+          echo "CLUSTER_NAME=$(terraform output -raw cluster_name)" >> $GITHUB_ENV
+        working-directory: terraform
+
+      - name: Set AKS Context
+        if: github.event_name == 'workflow_dispatch'
+        uses: azure/aks-set-context@v3
+        with:
+          cluster-name: $CLUSTER_NAME 
+          resource-group: $RG
+
+      - name: verify cluster access
+        if: github.event_name == 'workflow_dispatch'
+        run: kubectl get nodes
+
+      - name: get ingress lb IP 
+        if: github.event_name == 'workflow_dispatch'
+        run: |
+          echo "INGRESS_LB_IP=$(kubectl get svc -n ingress-nginx | awk '{ print $4 }' | head -n 2 | tail -n 1)" >> $GITHUB_ENV
+
+      - name: Login to Docker Hub
+        if: github.event_name == 'workflow_dispatch'
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_TOKEN }}
+
+      - name: build frontend docker image 
+        if: github.event_name == 'workflow_dispatch'
+        run: |
+          docker build --build-arg REACT_APP_API_URL=http://$INGRESS_LB_IP/api \
+          -t ${{ secrets.DOCKER_USERNAME }}/ecommerce-app-frontend:latest .
+        working-directory: ecommerce-app-frontend
+
+      - name: push frontend docker image
+        if: github.event_name == 'workflow_dispatch'
+        run: docker push ${{ secrets.DOCKER_USERNAME }}/ecommerce-app-frontend:latest
+
+      - name: Force rollout
+        if: github.event_name == 'workflow_dispatch'
+        run: kubectl rollout restart deployment/frontend -n default
+        working-directory: k8s/frontend
