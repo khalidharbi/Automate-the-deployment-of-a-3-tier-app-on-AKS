@@ -129,7 +129,7 @@ jobs:
         if: ${{ github.event_name == 'workflow_dispatch' }}
         run: |
           echo "Waiting for Prometheus targets to be UP..."
-          PROM_SVC=$(kubectl get svc prometheus-server -n monitoring -o jsonpath='{.spec.clusterIP}')
+          PROM_SVC=$(kubectl get svc prometheus-kube-prometheus-prometheus -n monitoring -o jsonpath='{.spec.clusterIP}')
           for i in {1..12}; do
             UP=$(curl -s http://$PROM_SVC:80/api/v1/targets | jq '.data.activeTargets[] | select(.health=="up")' | wc -l)
             if [[ "$UP" -gt 0 ]]; then
