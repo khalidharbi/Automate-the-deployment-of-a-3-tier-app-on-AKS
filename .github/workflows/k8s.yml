@@ -24,6 +24,14 @@ jobs:
           echo "ARM_SUBSCRIPTION_ID=${{ fromJson(secrets.AZURE_CREDENTIALS).subscriptionId }}" >> $GITHUB_ENV
           echo "ARM_TENANT_ID=${{ fromJson(secrets.AZURE_CREDENTIALS).tenantId }}" >> $GITHUB_ENV
 
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.9.0
+
+      - name: Initialize Terraform
+        run: terraform init
+        
       - name: Get AKS credentials
         if: ${{ github.event_name == 'workflow_dispatch' }}
         run: |
