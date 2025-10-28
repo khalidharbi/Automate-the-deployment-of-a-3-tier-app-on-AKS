@@ -123,9 +123,9 @@ jobs:
           ADMIN_PASS=$(kubectl get secret prometheus-grafana -n monitoring -o jsonpath='{.data.admin-password}' | base64 --decode)
 
           DASHBOARDS=(
-            "8588"  # Kubernetes cluster monitoring
-            "9614"  # NGINX Ingress Controller
-            "13978" # Loki Logs overview
+            "315"  # Kubernetes cluster monitoring
+            "6417"  # kube state metrics
+            "13639" # k8s app logs
           )
 
           for DASH_ID in "${DASHBOARDS[@]}"; do
