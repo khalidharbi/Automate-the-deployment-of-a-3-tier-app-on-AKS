@@ -124,7 +124,7 @@ jobs:
 
           DASHBOARDS=(
             "315"  # Kubernetes cluster monitoring
-            "6417"  # kube state metrics
+            "13641"  # Kubernetes deployments/workloads monitoring
             "13639" # k8s app logs
           )
 
