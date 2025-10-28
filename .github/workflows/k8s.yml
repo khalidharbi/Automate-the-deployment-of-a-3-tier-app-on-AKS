@@ -24,60 +24,17 @@ jobs:
           echo "ARM_SUBSCRIPTION_ID=${{ fromJson(secrets.AZURE_CREDENTIALS).subscriptionId }}" >> $GITHUB_ENV
           echo "ARM_TENANT_ID=${{ fromJson(secrets.AZURE_CREDENTIALS).tenantId }}" >> $GITHUB_ENV
 
-      - name: Setup Terraform
-        uses: hashicorp/setup-terraform@v3
-        with:
-          terraform_version: 1.9.0
-
-      - name: Initialize Terraform backend
-        run: terraform init
-        working-directory: terraform
-
-      - name: get k8s outputs (rg, cluster_name)
+      - name: Get AKS credentials
+        if: ${{ github.event_name == 'workflow_dispatch' }}
         run: |
-          echo "RG=$(terraform output -raw rg)" >> $GITHUB_ENV
-          echo "CLUSTER_NAME=$(terraform output -raw cluster_name)" >> $GITHUB_ENV
-        working-directory: terraform
+          az aks get-credentials \
+            --resource-group $(terraform output -raw rg) \
+            --name $(terraform output -raw cluster_name) \
+            --overwrite-existing
 
-      - name: Set AKS Context
-        uses: azure/aks-set-context@v3
-        with:
-          cluster-name: ${{ env.CLUSTER_NAME }} 
-          resource-group: ${{ env.RG }}
-
-      - name: verify cluster access
+      - name: Verify kubectl connection
+        if: ${{ github.event_name == 'workflow_dispatch' }}
         run: kubectl get nodes
-
-      - name: Install nginx Ingress
-        run: |
-          helm repo add ingress-nginx https://kubernetes.github.io/ingress-nginx
-          helm repo update
-          helm install ingress-nginx ingress-nginx/ingress-nginx --create-namespace --namespace ingress-nginx
-
-      - name: Deploy kube-prometheus-stack
-        run: |
-          helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
-          helm repo update
-          helm upgrade --install monitoring prometheus-community/kube-prometheus-stack \
-            --namespace monitoring --create-namespace \
-            --set prometheus.service.type=LoadBalancer
-
-      - name: wait for ingress IP
-        run: |
-          echo "Waiting for Ingress LB IP..."
-          for i in {1..30}; do
-            IP=$(kubectl get svc ingress-nginx-controller -n ingress-nginx -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
-            if [ -n "$IP" ]; then
-              echo "INGRESS_LB_IP=$IP" >> $GITHUB_ENV
-              break
-            fi
-            sleep 10
-          done
-
-      - name: Expose Prometheus externally
-        run: |
-          echo "Prometheus LB IP:"
-          kubectl get svc monitoring-kube-prometheus-prometheus -n monitoring -o jsonpath='{.status.loadBalancer.ingress[0].ip}'
 
       - name: create namespace 
         run: |
