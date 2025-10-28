@@ -59,12 +59,12 @@ jobs:
 
       - name: Apply Prometheus ClusterRole
         if: ${{ github.event_name == 'workflow_dispatch' }}
-        run: kubectl apply -f k8s/rbac-prometheus-clusterrole.yaml
+        run: kubectl apply -f rbac-prometheus-clusterrole.yaml
         working-directory: k8s
 
       - name: Apply Prometheus ClusterRoleBinding
         if: ${{ github.event_name == 'workflow_dispatch' }}
-        run: kubectl apply -f k8s/rbac-prometheus-clusterrolebinding.yaml
+        run: kubectl apply -f rbac-prometheus-clusterrolebinding.yaml
         working-directory: k8s
 
 
