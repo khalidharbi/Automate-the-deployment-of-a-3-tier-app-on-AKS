@@ -47,6 +47,7 @@ jobs:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_TOKEN }}
 
+#     image should be built with sha tag, DO NOT USE LATEST.
       - name: Build backend docker image
         if: github.event_name == 'workflow_dispatch'
         run: |

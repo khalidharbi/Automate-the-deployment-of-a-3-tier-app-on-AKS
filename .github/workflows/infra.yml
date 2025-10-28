@@ -1,29 +1,31 @@
-name: Provision infra 
+name: Provision infra
 
 on:
   workflow_dispatch:
-    
+
+env:
+  TF_WORKING_DIR: terraform
+  ARM_CLIENT_ID: ${{ fromJson(secrets.AZURE_CREDENTIALS).clientId }}
+  ARM_CLIENT_SECRET: ${{ fromJson(secrets.AZURE_CREDENTIALS).clientSecret }}
+  ARM_SUBSCRIPTION_ID: ${{ fromJson(secrets.AZURE_CREDENTIALS).subscriptionId }}
+  ARM_TENANT_ID: ${{ fromJson(secrets.AZURE_CREDENTIALS).tenantId }}
+
 jobs:
   infra:
-    name: Provision AKS and Azure sql
+    name: Provision AKS and Azure SQL
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ${{ env.TF_WORKING_DIR }}
 
     steps:
-      - name: checkout code
+      - name: Checkout code
         uses: actions/checkout@v4
-        
 
       - name: Login to Azure
         uses: azure/login@v2
-        with: 
+        with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
-
-      - name: Set Terraform Azure credentials
-        run: |
-          echo "ARM_CLIENT_ID=${{ fromJson(secrets.AZURE_CREDENTIALS).clientId }}" >> $GITHUB_ENV
-          echo "ARM_CLIENT_SECRET=${{ fromJson(secrets.AZURE_CREDENTIALS).clientSecret }}" >> $GITHUB_ENV
-          echo "ARM_SUBSCRIPTION_ID=${{ fromJson(secrets.AZURE_CREDENTIALS).subscriptionId }}" >> $GITHUB_ENV
-          echo "ARM_TENANT_ID=${{ fromJson(secrets.AZURE_CREDENTIALS).tenantId }}" >> $GITHUB_ENV
 
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
@@ -31,17 +33,13 @@ jobs:
           terraform_version: 1.9.0
 
       - name: Initialize Terraform
-        run: terraform init 
-        working-directory: terraform
+        run: terraform init
 
       - name: Validate configuration
-        run: terraform validate 
-        working-directory: terraform
+        run: terraform validate
 
       - name: Plan the changes
         run: terraform plan -out=tfplan
-        working-directory: terraform
 
       - name: Apply changes
         run: terraform apply --auto-approve tfplan
-        working-directory: terraform
