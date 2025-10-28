@@ -46,15 +46,15 @@ jobs:
         run: terraform plan -out=tfplan
 
       - name: Apply changes
-        if: ${{ github.event_name == 'workflow_dispatch' }}
+        #if: ${{ github.event_name == 'workflow_dispatch' }}
         run: terraform apply --auto-approve tfplan
 
       - name: Get AKS credentials
         if: ${{ github.event_name == 'workflow_dispatch' }}
         run: |
           az aks get-credentials \
-            --resource-group $(terraform output -raw resource_group_name) \
-            --name $(terraform output -raw aks_name) \
+            --resource-group $(terraform output -raw rg) \
+            --name $(terraform output -raw cluster_name) \
             --overwrite-existing
 
       - name: Verify kubectl connection
