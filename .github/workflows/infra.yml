@@ -134,9 +134,13 @@ jobs:
           ADMIN_PASS=$(kubectl get secret prometheus-grafana -n monitoring -o jsonpath='{.data.admin-password}' | base64 --decode)
 
           DASHBOARDS=(
-           # "315"  # Kubernetes cluster monitoring
-           # "13641"  # Kubernetes deployments/workloads monitoring
-            "13639" # k8s app logs
+            "15760"  # k8s-views-pods
+            "15759"  # k8s-views-nodes
+            "15757"  # k8s-views-global
+            "15762"  # k8s-system-coredns
+            "15761"  # k8s-system-api-server
+            "15758"  # k8s-views-namespaces
+            "13639"  # k8s app logs
           )
 
           for DASH_ID in "${DASHBOARDS[@]}"; do
@@ -177,7 +181,7 @@ jobs:
           ADMIN_USER="admin"
           ADMIN_PASS=$(kubectl get secret prometheus-grafana -n monitoring -o jsonpath='{.data.admin-password}' | base64 --decode)
           echo "--------------------------------------------------"
-          echo "🌐 Grafana URL: http://$GRAFANA_IP:80"
-          echo "👤 Username: $ADMIN_USER"
-          echo "🔑 Password: $ADMIN_PASS"
+          echo " Grafana URL: http://$GRAFANA_IP:80"
+          echo " Username: $ADMIN_USER"
+          echo " Password: $ADMIN_PASS"
           echo "--------------------------------------------------"
