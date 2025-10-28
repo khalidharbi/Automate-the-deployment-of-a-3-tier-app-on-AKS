@@ -31,7 +31,8 @@ jobs:
 
       - name: Initialize Terraform
         run: terraform init
-        
+        working-directory: terraform
+
       - name: Get AKS credentials
         if: ${{ github.event_name == 'workflow_dispatch' }}
         run: |
