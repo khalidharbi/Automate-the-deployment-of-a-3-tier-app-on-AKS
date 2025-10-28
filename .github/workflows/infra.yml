@@ -111,6 +111,50 @@ jobs:
             --set promtail.enabled=true \
             --set grafana.enabled=false
 
+      - name: Wait for Prometheus server
+        if: ${{ github.event_name == 'workflow_dispatch' }}
+        run: |
+          echo "Waiting for Prometheus to be ready..."
+          for i in {1..12}; do
+            STATUS=$(kubectl get pods -n monitoring -l app.kubernetes.io/name=prometheus -o jsonpath='{.items[0].status.containerStatuses[0].ready}')
+            if [[ "$STATUS" == "true" ]]; then
+              echo "Prometheus is ready."
+              break
+            fi
+           echo "Prometheus not ready yet. Sleeping 5s..."
+           sleep 5
+          done
+
+      - name: Wait for Prometheus targets
+        if: ${{ github.event_name == 'workflow_dispatch' }}
+        run: |
+          echo "Waiting for Prometheus targets to be UP..."
+          PROM_SVC=$(kubectl get svc prometheus-server -n monitoring -o jsonpath='{.spec.clusterIP}')
+          for i in {1..12}; do
+            UP=$(curl -s http://$PROM_SVC:80/api/v1/targets | jq '.data.activeTargets[] | select(.health=="up")' | wc -l)
+            if [[ "$UP" -gt 0 ]]; then
+              echo "Prometheus targets are UP."
+              break
+           fi
+           echo "No targets ready yet. Sleeping 5s..."
+           sleep 5
+          done
+
+      - name: Wait for Loki readiness
+        if: ${{ github.event_name == 'workflow_dispatch' }}
+        run: |
+          echo "Waiting for Loki to be ready..."
+          for i in {1..12}; do
+            STATUS=$(kubectl get pods -n logging -l app.kubernetes.io/name=loki -o jsonpath='{.items[0].status.containerStatuses[0].ready}')
+            if [[ "$STATUS" == "true" ]]; then
+              echo "Loki is ready."
+              break
+            fi
+            echo "Loki not ready yet. Sleeping 5s..."
+            sleep 5
+          done
+
+
       - name: Add Loki Data Source to Grafana
         if: ${{ github.event_name == 'workflow_dispatch' }}
         run: |
