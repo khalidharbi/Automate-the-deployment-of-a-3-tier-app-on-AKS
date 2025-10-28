@@ -57,6 +57,17 @@ jobs:
             --name $(terraform output -raw cluster_name) \
             --overwrite-existing
 
+      - name: Apply Prometheus ClusterRole
+        if: ${{ github.event_name == 'workflow_dispatch' }}
+        run: kubectl apply -f k8s/rbac-prometheus-clusterrole.yaml
+        working-directory: k8s
+
+      - name: Apply Prometheus ClusterRoleBinding
+        if: ${{ github.event_name == 'workflow_dispatch' }}
+        run: kubectl apply -f k8s/rbac-prometheus-clusterrolebinding.yaml
+        working-directory: k8s
+
+
       - name: Verify kubectl connection
         if: ${{ github.event_name == 'workflow_dispatch' }}
         run: kubectl get nodes
@@ -123,8 +134,8 @@ jobs:
           ADMIN_PASS=$(kubectl get secret prometheus-grafana -n monitoring -o jsonpath='{.data.admin-password}' | base64 --decode)
 
           DASHBOARDS=(
-            "315"  # Kubernetes cluster monitoring
-            "13641"  # Kubernetes deployments/workloads monitoring
+           # "315"  # Kubernetes cluster monitoring
+           # "13641"  # Kubernetes deployments/workloads monitoring
             "13639" # k8s app logs
           )
 
