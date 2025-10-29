@@ -61,7 +61,7 @@ jobs:
 
           # Prepare JSON file
           echo "{
-           \"API_URL\": \"http://$API_LB_IP/\"
+           \"API_URL\": \"http://$API_LB_IP/api/\"
           }" > config.json
 
           # Delete existing ConfigMap if it exists
