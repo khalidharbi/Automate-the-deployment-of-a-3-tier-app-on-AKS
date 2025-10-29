@@ -40,14 +40,10 @@ jobs:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
 
       - name: Set AKS context
-        if: github.event_name == 'workflow_dispatch
+        if: github.event_name == 'workflow_dispatch'
         run: az aks get-credentials --resource-group khalid-rg --name khalid-aks-cluster --overwrite-existing
 
       - name: Verify cluster
-        if: github.event_name == 'workflow_dispatch
-        run: kubectl get nodes
-
-      - name: verify cluster access
         if: github.event_name == 'workflow_dispatch'
         run: kubectl get nodes
 
@@ -63,18 +59,18 @@ jobs:
         run: |
           API_LB_IP=$(kubectl get svc ingress-nginx-controller -n ingress-nginx -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
 
-           # Prepare JSON file
+          # Prepare JSON file
           echo "{
            \"API_URL\": \"http://$API_LB_IP/\"
           }" > config.json
 
-           # Delete existing ConfigMap if it exists
-           kubectl delete configmap frontend-configmap -n user-management --ignore-not-found
+          # Delete existing ConfigMap if it exists
+          kubectl delete configmap frontend-configmap -n user-management --ignore-not-found
 
           # Create ConfigMap from file
           kubectl create configmap frontend-configmap \
            --from-file=config.json=config.json \
-            -n user-management
+           -n user-management
 
           # Cleanup
           rm config.json
