@@ -13,23 +13,11 @@ spec:
       labels:
         app: ecommerce-app-frontend
     spec:
-      volumes:
-        - name: ui-config
-          configMap:
-            name: frontend-configmap
-            items:
-            - key: config.json
-              path: config.json
       containers:
       - image: khalidharbi/ecommerce-app-frontend:latest
         name: ecommerce-app-frontend
         ports:
         - containerPort: 80
-        volumeMounts:
-          - name: ui-config
-            mountPath: /usr/share/nginx/html/config.json 
-            subPath: config.json                           
-            readOnly: true
         livenessProbe:
           httpGet:
             path: /
