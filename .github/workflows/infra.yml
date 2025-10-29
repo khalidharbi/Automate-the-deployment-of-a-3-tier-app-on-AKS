@@ -115,7 +115,7 @@ jobs:
         if: ${{ github.event_name == 'workflow_dispatch' }}
         run: |
           echo "Waiting 60s for Prometheus, Grafana, and Loki to start..."
-          sleep 60
+          sleep 90
 
       - name: Add Loki Data Source to Grafana
         if: ${{ github.event_name == 'workflow_dispatch' }}
