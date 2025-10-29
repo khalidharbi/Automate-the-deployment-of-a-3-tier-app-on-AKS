@@ -65,12 +65,12 @@ jobs:
           }" > config.json
 
           # Delete existing ConfigMap if it exists
-          kubectl delete configmap frontend-configmap -n user-management --ignore-not-found
+          kubectl delete configmap frontend-configmap -n ecommerce-app --ignore-not-found
 
           # Create ConfigMap from file
           kubectl create configmap frontend-configmap \
            --from-file=config.json=config.json \
-           -n user-management
+           -n ecommerce-app
 
           # Cleanup
           rm config.json
