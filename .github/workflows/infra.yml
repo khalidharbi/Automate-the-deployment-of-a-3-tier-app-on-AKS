@@ -46,7 +46,7 @@ jobs:
         run: terraform plan -out=tfplan
 
       - name: Apply changes
-        #if: ${{ github.event_name == 'workflow_dispatch' }}
+        if: ${{ github.event_name == 'workflow_dispatch' }}
         run: terraform apply --auto-approve tfplan
 
       - name: Get AKS credentials
@@ -117,7 +117,6 @@ jobs:
           echo "Waiting 60s for Prometheus, Grafana, and Loki to start..."
           sleep 60
 
-
       - name: Add Loki Data Source to Grafana
         if: ${{ github.event_name == 'workflow_dispatch' }}
         run: |
@@ -163,27 +162,11 @@ jobs:
             echo "Imported dashboard ID $DASH_ID"
           done
         
-      - name: Import Custom Grafana Dashboard
-        if: ${{ github.event_name == 'workflow_dispatch' }}
-        run: |
-          GRAFANA_IP=$(kubectl get svc prometheus-grafana -n monitoring -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
-          ADMIN_PASS=$(kubectl get secret prometheus-grafana -n monitoring -o jsonpath='{.data.admin-password}' | base64 --decode)
-    
-          DASHBOARD_JSON=$(cat grafana/cluster_monitoring.json | sed 's/\${DS_PROMETHEUS}/Prometheus/g; s/\${DS_LOKI}/Loki/g')
-    
-          curl -s -X POST http://admin:$ADMIN_PASS@$GRAFANA_IP:80/api/dashboards/db \
-           -H "Content-Type: application/json" \
-           -d "{
-                 \"dashboard\": $DASHBOARD_JSON,
-                 \"overwrite\": true
-               }"
-          echo "Imported custom dashboard"
-
 
       - name: Show Grafana access details
         if: ${{ github.event_name == 'workflow_dispatch' }}
         run: |
-          echo "🔹 Retrieving Grafana Service Info..."
+          echo " Retrieving Grafana Service Info..."
           GRAFANA_IP=$(kubectl get svc prometheus-grafana -n monitoring -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
           ADMIN_USER="admin"
           ADMIN_PASS=$(kubectl get secret prometheus-grafana -n monitoring -o jsonpath='{.data.admin-password}' | base64 --decode)

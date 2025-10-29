@@ -38,39 +38,14 @@ jobs:
         uses: azure/login@v2
         with: 
           creds: ${{ secrets.AZURE_CREDENTIALS }}
-        
-      - name: Set Terraform Azure credentials
-        if: github.event_name == 'workflow_dispatch'
-        run: |
-          echo "ARM_CLIENT_ID=${{ fromJson(secrets.AZURE_CREDENTIALS).clientId }}" >> $GITHUB_ENV
-          echo "ARM_CLIENT_SECRET=${{ fromJson(secrets.AZURE_CREDENTIALS).clientSecret }}" >> $GITHUB_ENV
-          echo "ARM_SUBSCRIPTION_ID=${{ fromJson(secrets.AZURE_CREDENTIALS).subscriptionId }}" >> $GITHUB_ENV
-          echo "ARM_TENANT_ID=${{ fromJson(secrets.AZURE_CREDENTIALS).tenantId }}" >> $GITHUB_ENV
 
-      - name: Setup Terraform
-        if: github.event_name == 'workflow_dispatch'
-        uses: hashicorp/setup-terraform@v3
-        with:
-          terraform_version: 1.9.0
+      - name: Set AKS context
+        if: github.event_name == 'workflow_dispatch
+        run: az aks get-credentials --resource-group project3k-group2 --name group2cluster-group2 --overwrite-existing
 
-      - name: Initialize Terraform backend
-        if: github.event_name == 'workflow_dispatch'
-        run: terraform init
-        working-directory: terraform
-
-      - name: get k8s outputs (rg, cluster_name)
-        if: github.event_name == 'workflow_dispatch'
-        run: |
-          echo "RG=$(terraform output -raw rg)" >> $GITHUB_ENV
-          echo "CLUSTER_NAME=$(terraform output -raw cluster_name)" >> $GITHUB_ENV
-        working-directory: terraform
-
-      - name: Set AKS Context
-        if: github.event_name == 'workflow_dispatch'
-        uses: azure/aks-set-context@v3
-        with:
-          cluster-name: ${{ env.CLUSTER_NAME }} 
-          resource-group: ${{ env.RG }}
+      - name: Verify cluster
+        if: github.event_name == 'workflow_dispatch
+        run: kubectl get nodes
 
       - name: verify cluster access
         if: github.event_name == 'workflow_dispatch'
@@ -89,18 +64,28 @@ jobs:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_TOKEN }}
 
-      - name: build frontend docker image 
+      - name: Build frontend Docker image
         if: github.event_name == 'workflow_dispatch'
         run: |
+          IMAGE_NAME=${{ secrets.DOCKER_USERNAME }}/ecommerce-app-frontend
+          SHA_TAG=$(echo $GITHUB_SHA | cut -c1-7)
           docker build --build-arg REACT_APP_API_URL=http://$INGRESS_LB_IP/api \
-           -t ${{ secrets.DOCKER_USERNAME }}/ecommerce-app-frontend:latest .
+            -t $IMAGE_NAME:latest \
+            -t $IMAGE_NAME:$SHA_TAG .
+          echo "IMAGE_NAME=$IMAGE_NAME" >> $GITHUB_ENV
+          echo "IMAGE_TAG=$SHA_TAG" >> $GITHUB_ENV
         working-directory: ecommerce-app-frontend
 
-      - name: push frontend docker image
+      - name: Push Docker image
         if: github.event_name == 'workflow_dispatch'
-        run: docker push ${{ secrets.DOCKER_USERNAME }}/ecommerce-app-frontend:latest
+        run: |
+          docker push ${{ env.IMAGE_NAME }}:latest
+          docker push ${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }}
 
-      - name: Force rollout
+      - name: Update K8s deployment with SHA image
         if: github.event_name == 'workflow_dispatch'
-        run: kubectl rollout restart deployment/ecommerce-app-frontend -n ecommerce-app
+        run: |
+          kubectl set image deployment/ecommerce-app-frontend \
+            ecommerce-app-frontend=${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }} -n ecommerce-app
+          kubectl rollout status deployment/ecommerce-app-frontend -n ecommerce-app
         working-directory: k8s/frontend
