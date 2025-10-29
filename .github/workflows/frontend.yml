@@ -41,7 +41,7 @@ jobs:
 
       - name: Set AKS context
         if: github.event_name == 'workflow_dispatch
-        run: az aks get-credentials --resource-group project3k-group2 --name group2cluster-group2 --overwrite-existing
+        run: az aks get-credentials --resource-group khalid-rg --name khalid-aks-cluster --overwrite-existing
 
       - name: Verify cluster
         if: github.event_name == 'workflow_dispatch
